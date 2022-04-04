@@ -155,6 +155,65 @@ def convert_abacus(path_abacus_CF,savepath_abacus_CF,nrand,redshiftbin,rebinfact
 
 
 
+def plotpoles(pathtwopoint,rebinfactor_s,multipole_n): 
+
+    # get files and data format
+    fnames_twopoint = glob.glob(pathtwopoint+'*.npy')
+    n_mocks=len(fnames_twopoint)
+
+    #get shape of the data
+    poles,_=mockchallenge_dataloader(fnames_twopoint[0],rebinfactor_s)
+    sbin_centres=poles[0]
+    multipoles=poles[1]
+    n_sbins=len(sbin_centres)
+    n_datapoint=n_sbins
+    
+    #n_parameters=6
+
+    #collect the data from all EZmocks into one array
+    all_data=[] 
+
+    for i, fname in enumerate(fnames_twopoint):
+        poles,_=mockchallenge_dataloader(fnames_twopoint[i],rebinfactor_s)
+        multipoles=poles[1]
+        all_data.append(multipoles[multipole_n])
+    
+    av_xi=np.mean(all_data,axis=0)
+    std_xi=np.std(all_data,axis=0)
+    
+    return av_xi,std_xi,sbin_centres
+
+
+
+
+
+def plot_EZmock_realisation(pathtwopoint,path_abacus_CF,rebinfactor_s,multipole_n,nrand,redshiftbin,plotpath,plotname,plotttile):
+    plt.clf()
+    plt.title(plotttile)
+    av_xi,std_xi,sbin_centres=plotpoles(pathtwopoint+redshiftbin,rebinfactor_s,multipole_n)
+    
+    plt.plot(sbin_centres,np.square(sbin_centres)*av_xi,c='b',ls='--')    
+    plt.fill_between(sbin_centres, np.square(sbin_centres)*(av_xi+3.0*std_xi), np.square(sbin_centres)*(av_xi-3.0*std_xi),alpha=0.2,color='b')
+                            
+    for i_real in range(25):
+        s_real=str(i_real).zfill(3)
+        #determine filename from pycorr calculations and load file
+        filename="results_realization"+s_real+"_rand"+str(nrand)+"_"+redshiftbin[0:2]+".npy"
+        poles,alldata=mockchallenge_dataloader(path_abacus_CF+filename,rebinfactor_s)
+        sbin_centres=poles[0]
+        multipoles=poles[1]
+        currentpole=multipoles[multipole_n]
+        plt.plot(sbin_centres,np.square(sbin_centres)*currentpole,c='r',ls='-',alpha=0.5)    
+
+    plt.xlabel(r's [$h^{-1}$ Mpc]')   
+    plt.ylabel(r'$s^{2} \xi$ [$h^{-1}$ Mpc]') 
+    plt.tight_layout()
+
+    plt.savefig(plotpath+plotname+"_"+redshiftbin+str(multipole_n)+".png",dpi=300, facecolor='w',edgecolor='w')
+    plt.close()
+
+
+
 
 #basic paths (for my filesystem)
 rebinfactor_s=4
@@ -182,6 +241,35 @@ convert_abacus(path_abacus_CF,savepath_abacus_CF,20,"81",rebinfactor_s)
 convert_abacus(path_abacus_CF,savepath_abacus_CF,5,"46",rebinfactor_s)
 convert_abacus(path_abacus_CF,savepath_abacus_CF,5,"68",rebinfactor_s)
 convert_abacus(path_abacus_CF,savepath_abacus_CF,5,"81",rebinfactor_s)
+
+
+
+plotpath="plots/mockchallenge/"
+
+multipole_n=0
+plot_EZmock_realisation(pathtwopoint,path_abacus_CF,rebinfactor_s,multipole_n,20,"46_",plotpath,"compare_EZmocks_real","0.4<z<0.6, l=0")
+plot_EZmock_realisation(pathtwopoint,path_abacus_CF,rebinfactor_s,multipole_n,20,"68_",plotpath,"compare_EZmocks_real","0.6<z<0.8, l=0")
+plot_EZmock_realisation(pathtwopoint,path_abacus_CF,rebinfactor_s,multipole_n,20,"81_",plotpath,"compare_EZmocks_real","0.8<z<1.1, l=0")
+
+
+
+multipole_n=1
+plot_EZmock_realisation(pathtwopoint,path_abacus_CF,rebinfactor_s,multipole_n,20,"46_",plotpath,"compare_EZmocks_real","0.4<z<0.6, l=2")
+plot_EZmock_realisation(pathtwopoint,path_abacus_CF,rebinfactor_s,multipole_n,20,"68_",plotpath,"compare_EZmocks_real","0.6<z<0.8, l=2")
+plot_EZmock_realisation(pathtwopoint,path_abacus_CF,rebinfactor_s,multipole_n,20,"81_",plotpath,"compare_EZmocks_real","0.8<z<1.1, l=2")
+
+
+
+multipole_n=2
+plot_EZmock_realisation(pathtwopoint,path_abacus_CF,rebinfactor_s,multipole_n,20,"46_",plotpath,"compare_EZmocks_real","0.4<z<0.6, l=4")
+plot_EZmock_realisation(pathtwopoint,path_abacus_CF,rebinfactor_s,multipole_n,20,"68_",plotpath,"compare_EZmocks_real","0.6<z<0.8, l=4")
+plot_EZmock_realisation(pathtwopoint,path_abacus_CF,rebinfactor_s,multipole_n,20,"81_",plotpath,"compare_EZmocks_real","0.8<z<1.1, l=4")
+
+
+
+
+
+
 
 
 
