@@ -154,7 +154,7 @@ def convert_abacus(path_abacus_CF,savepath_abacus_CF,nrand,redshiftbin,rebinfact
         np.save(savepath_abacus_CF+filename[:-4]+"_poles",poles[1])
 
 
-
+#calculates mean and std for plots
 def plotpoles(pathtwopoint,rebinfactor_s,multipole_n): 
 
     # get files and data format
@@ -185,8 +185,7 @@ def plotpoles(pathtwopoint,rebinfactor_s,multipole_n):
 
 
 
-
-
+#quick overview plots comparing the Abacus realisations with the EZmocks
 def plot_EZmock_realisation(pathtwopoint,path_abacus_CF,rebinfactor_s,multipole_n,nrand,redshiftbin,plotpath,plotname,plotttile):
     plt.clf()
     plt.title(plotttile)
@@ -212,8 +211,51 @@ def plot_EZmock_realisation(pathtwopoint,path_abacus_CF,rebinfactor_s,multipole_
     plt.savefig(plotpath+plotname+"_"+redshiftbin+str(multipole_n)+".png",dpi=300, facecolor='w',edgecolor='w')
     plt.close()
 
+#converts the 25 boxes realisation to the same format as the covariance matrix
+def convert_box(path_box_CF,savepath_box_CF,rebinfactor_s):
+    #loop over realisations
+    for i_real in range(25):
+        s_real=str(i_real).zfill(3)
+        #determine filename from pycorr calculations and load file
+        filename="results_mockbox_"+s_real+".npy"
+        poles,alldata=mockchallenge_dataloader(path_box_CF+filename,rebinfactor_s)
+        
+        #convert to standard ascii file for multipoles
+        alldata.save_txt(savepath_box_CF+filename[:-4]+".dat",  ells=(0, 2, 4))
+        
+        #also save as numpy (nested array seem to be decrepit, hence also split parts)
+        np.save(savepath_box_CF+filename[:-4],poles)
+        np.save(savepath_box_CF+filename[:-4]+"_sbin",poles[0])
+        np.save(savepath_box_CF+filename[:-4]+"_poles",poles[1])
 
 
+#quick overview plots comparing the box realisations with the EZmocks
+def plot_EZmock_box_realisation(pathtwopoint,path_abacus_CF,rebinfactor_s,multipole_n,plotpath,plotname,plotttile):
+    plt.clf()
+    plt.title(plotttile)
+    av_xi,std_xi,sbin_centres=plotpoles(pathtwopoint,rebinfactor_s,multipole_n)
+    
+    plt.plot(sbin_centres,np.square(sbin_centres)*av_xi,c='b',ls='--')    
+    plt.fill_between(sbin_centres, np.square(sbin_centres)*(av_xi+3.0*std_xi), np.square(sbin_centres)*(av_xi-3.0*std_xi),alpha=0.2,color='b')
+                            
+    for i_real in range(25):
+        s_real=str(i_real).zfill(3)
+        #determine filename from pycorr calculations and load file
+        filename="results_mockbox_"+s_real+".npy"
+        poles,alldata=mockchallenge_dataloader(path_abacus_CF+filename,rebinfactor_s)
+        sbin_centres=poles[0]
+        multipoles=poles[1]
+        currentpole=multipoles[multipole_n]
+        plt.plot(sbin_centres,np.square(sbin_centres)*currentpole,c='r',ls='-',alpha=0.5)    
+
+    plt.xlabel(r's [$h^{-1}$ Mpc]')   
+    plt.ylabel(r'$s^{2} \xi$ [$h^{-1}$ Mpc]') 
+    plt.tight_layout()
+
+    plt.savefig(plotpath+plotname+"_"+str(multipole_n)+".png",dpi=300, facecolor='w',edgecolor='w')
+    plt.close()
+    
+    
 
 #basic paths (for my filesystem)
 rebinfactor_s=4
@@ -244,6 +286,7 @@ convert_abacus(path_abacus_CF,savepath_abacus_CF,5,"81",rebinfactor_s)
 
 
 
+#creates plots for the various multipoles
 plotpath="plots/mockchallenge/"
 
 multipole_n=0
@@ -266,14 +309,28 @@ plot_EZmock_realisation(pathtwopoint,path_abacus_CF,rebinfactor_s,multipole_n,20
 plot_EZmock_realisation(pathtwopoint,path_abacus_CF,rebinfactor_s,multipole_n,20,"81_",plotpath,"compare_EZmocks_real","0.8<z<1.1, l=4")
 
 
+#do stuff for the box simulations
+path_box_CF="samples/mockchallenge/box/abacus/results/"
+savepath_box_CF="samples/mockchallenge/box/abacus/results/rebinned/rebinned_"
+plotpath_box="plots/mockchallenge/box_"
+pathtwopoint_box="samples/mockchallenge/box/EZmocks/results_seed"
+savepath_box="samples/mockchallenge/box/cov/"
+
+rebinfactor_s=4
+
+#converts the box simulation data to multipoles with given bin sizes
+convert_box(path_box_CF,savepath_box_CF,rebinfactor_s)
 
 
 
+#calculate the covariance matrix for the box
+cal_cov(pathtwopoint_box,savepath_box,plotpath_box,"",rebinfactor_s)
 
 
-
-
-
+#do some plots
+plot_EZmock_box_realisation(pathtwopoint_box,path_box_CF,rebinfactor_s,0,plotpath_box,"compare_EZmocks_box","l=0")
+plot_EZmock_box_realisation(pathtwopoint_box,path_box_CF,rebinfactor_s,1,plotpath_box,"compare_EZmocks_box","l=2")
+plot_EZmock_box_realisation(pathtwopoint_box,path_box_CF,rebinfactor_s,2,plotpath_box,"compare_EZmocks_box","l=4")
 
 
 
