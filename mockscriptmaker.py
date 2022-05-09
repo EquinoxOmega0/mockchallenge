@@ -50,7 +50,7 @@ def scriptmaker(inputfilename,filename,n_rand,zmin,zmax):
     mainscriptfile.writelines("#PBS -l nodes=1:ppn=28 \n\n")
     mainscriptfile.writelines("module load python3 \n\n")    
     mainscriptfile.writelines("cd $PBS_O_WORKDIR \n\n")
-    mainscriptfile.writelines("source activate mockchallenge \n\n")
+    mainscriptfile.writelines("source activate desimock \n\n")
     mainscriptfile.writelines("rm -f /dev/shm/* \n\n")
     mainscriptfile.writelines("./mock_challenge.py -i '"+inputfilename+"' -o 'results/results_"+filename+"' -n "+str(n_rand)+" -c 28 -y "+str(zmin)+" -z "+str(zmax)+" > logs/"+filename+".out.$PBS_JOBID \n\n")
     mainscriptfile.close()
@@ -92,6 +92,52 @@ controllfile.close()
 
 
 
+
+
+
+redshiftrange=np.zeros(3,dtype=[('z_name', 'S2'),('zmin', '<f8'), ('zmax', '<f8')])
+redshiftrange["z_name"]=["46","68","81"]
+redshiftrange["zmin"]=[0.4,0.6,0.8]
+redshiftrange["zmax"]=[0.6,0.8,1.1]
+
+controllfile = open("mockchallenge_scripts/run_pycorr_rest.sh","w")
+controllfile.writelines("#!/bin/bash \n")
+
+for iphase in range(25):
+    if ((iphase!=0)):
+    
+        phase=str(iphase).zfill(3)
+
+        inputfilename="cutsky_LRG_z0.800_AbacusSummit_base_c000_ph"+phase+".fits"    
+        #n_rand=5
+
+
+        #for iredshift in range(3):
+            
+            #filename='realization'+str(phase)+'_rand'+str(n_rand)+'_'+str(redshiftrange["z_name"][iredshift],'utf-8')
+            
+            #scriptmaker(inputfilename,filename,n_rand,redshiftrange["zmin"][iredshift],redshiftrange["zmax"][iredshift])
+
+            #controllfile.writelines("sleep 5 \n")
+            #controllfile.writelines("qsub pbs_mockchallenge_"+filename+".sh \n\n")
+
+
+
+        n_rand=20
+
+
+        for iredshift in range(3):
+            
+            filename='realization'+str(phase)+'_rand'+str(n_rand)+'_'+str(redshiftrange["z_name"][iredshift],'utf-8')
+            
+            scriptmaker(inputfilename,filename,n_rand,redshiftrange["zmin"][iredshift],redshiftrange["zmax"][iredshift])
+
+            controllfile.writelines("sleep 5 \n")
+            controllfile.writelines("qsub pbs_mockchallenge_"+filename+".sh \n\n")
+
+
+
+controllfile.close()
 
 
 
